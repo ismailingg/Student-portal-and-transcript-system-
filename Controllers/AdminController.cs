@@ -148,6 +148,72 @@ namespace WP_project.Controllers
             ViewData["DepartmentId"] = new SelectList(_context.Departments, "DepartmentId", "Name", model.DepartmentId);
             return View(model);
         }
+
+        // GET: ChangePassword
+        public async Task<IActionResult> ChangePassword(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var user = await _userManager.FindByIdAsync(id.ToString()!);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var model = new ChangePasswordViewModel
+            {
+                UserId = user.Id,
+                UserName = user.FullName,
+                UserEmail = user.Email ?? string.Empty
+            };
+
+            return View(model);
+        }
+
+        // POST: ChangePassword
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = await _userManager.FindByIdAsync(model.UserId.ToString());
+                if (user == null)
+                {
+                    return NotFound();
+                }
+
+                // Generate password reset token and reset the password
+                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                var result = await _userManager.ResetPasswordAsync(user, token, model.NewPassword);
+                
+                if (result.Succeeded)
+                {
+                    TempData["SuccessMessage"] = $"Password has been successfully changed for {user.FullName} ({user.Email}).";
+                    return RedirectToAction(nameof(Users));
+                }
+                else
+                {
+                    foreach (var error in result.Errors)
+                    {
+                        ModelState.AddModelError(string.Empty, error.Description);
+                    }
+                }
+            }
+
+            // Reload user info if validation fails
+            var reloadUser = await _userManager.FindByIdAsync(model.UserId.ToString());
+            if (reloadUser != null)
+            {
+                model.UserName = reloadUser.FullName;
+                model.UserEmail = reloadUser.Email ?? string.Empty;
+            }
+
+            return View(model);
+        }
     }
 }
 

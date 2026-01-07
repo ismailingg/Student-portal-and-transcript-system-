@@ -85,6 +85,43 @@ namespace WP_project.Controllers
                 return Unauthorized();
             }
 
+            // Validate grade ranges (0-100)
+            if (assign.HasValue && (assign < 0 || assign > 100))
+            {
+                ModelState.AddModelError("assign", "Assignment score must be between 0 and 100.");
+            }
+            if (quiz.HasValue && (quiz < 0 || quiz > 100))
+            {
+                ModelState.AddModelError("quiz", "Quiz score must be between 0 and 100.");
+            }
+            if (project.HasValue && (project < 0 || project > 100))
+            {
+                ModelState.AddModelError("project", "Project score must be between 0 and 100.");
+            }
+            if (mid.HasValue && (mid < 0 || mid > 100))
+            {
+                ModelState.AddModelError("mid", "Mid-term score must be between 0 and 100.");
+            }
+            if (final.HasValue && (final < 0 || final > 100))
+            {
+                ModelState.AddModelError("final", "Final exam score must be between 0 and 100.");
+            }
+
+            // If validation fails, return to ManageGrades view with errors
+            if (!ModelState.IsValid)
+            {
+                var offering = await _context.CourseOfferings
+                    .Include(c => c.Course)
+                    .Include(c => c.Semester)
+                    .Include(c => c.Enrollments)
+                    .ThenInclude(e => e.Student)
+                    .FirstOrDefaultAsync(c => c.CourseOfferingId == enrollmentCourseOfferingId);
+
+                if (offering == null) return NotFound();
+
+                return View("ManageGrades", offering);
+            }
+
             // Update Components
             enrollment.AssignmentScore = assign;
             enrollment.QuizScore = quiz;

@@ -11,11 +11,17 @@ builder.Services.AddDbContext<UniversityDbContext>(options =>
 // Add Identity Services
 builder.Services.AddIdentity<ApplicationUser, IdentityRole<int>>(options =>
 {
+    // Password requirements
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequireUppercase = true;
     options.Password.RequiredLength = 6;
+    
+    // Account lockout settings (brute-force protection)
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+    options.Lockout.AllowedForNewUsers = true;
 })
 .AddEntityFrameworkStores<UniversityDbContext>()
 .AddDefaultTokenProviders();

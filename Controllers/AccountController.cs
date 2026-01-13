@@ -35,7 +35,7 @@ namespace WP_project.Controllers
         {
             if (ModelState.IsValid)
             {
-                var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
+                var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: true);
                 if (result.Succeeded)
                 {
                     var user = await _userManager.FindByEmailAsync(model.Email);
@@ -47,7 +47,20 @@ namespace WP_project.Controllers
                     }
                     return RedirectToAction("Index", "Home");
                 }
-                ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                
+                // Handle different failure scenarios
+                if (result.IsLockedOut)
+                {
+                    ModelState.AddModelError(string.Empty, "Account locked out due to multiple failed login attempts. Please try again in 15 minutes.");
+                }
+                else if (result.IsNotAllowed)
+                {
+                    ModelState.AddModelError(string.Empty, "Account is not allowed to sign in. Please contact administrator.");
+                }
+                else
+                {
+                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                }
             }
             return View(model);
         }

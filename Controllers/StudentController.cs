@@ -153,6 +153,15 @@ namespace WP_project.Controllers
                 }
             }
 
+            // Check course capacity
+            var currentEnrollments = await _context.Enrollments
+                .CountAsync(e => e.CourseOfferingId == courseOfferingId);
+            if (currentEnrollments >= offering.Capacity)
+            {
+                TempData["Error"] = "Course is full.";
+                return RedirectToAction(nameof(Register));
+            }
+
             var enrollment = new Enrollment
             {
                 StudentId = student.StudentId,
